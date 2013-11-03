@@ -47,20 +47,18 @@
 	{
 		// DeuxVis pin-0 pullup
 		PORTB |= _BV(START_JUMPER_PIN); // has pullup enabled
-		//_delay_us(10);
 	}
 	
 	// Очистка всех использованых выше регистров
 	static inline void  bootLoaderExit(void) 
 	{
+		PORTB = 0;
 		// DeuxVis pin-0 pullup
-		//PORTB = 0;
 	}
 	
 	// Действие, выполняемое по комманде bootloaderexit
 	static inline void leaveLoader()
 	{
-		//eeprom_write_byte( (void*)E2END, 0xff );
 	}
 	
 #endif

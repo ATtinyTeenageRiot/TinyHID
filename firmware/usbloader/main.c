@@ -108,6 +108,9 @@ uint16_t addr = currentAddress;
 
 static void writePage()
 {
+	// Мы не должны писать в самого себя
+	if( currentAddress >= BOOTLOADER_ADDRESS ) return;
+	
 	boot_page_write( currentAddress - SPM_PAGESIZE );
 #ifdef LED_PIN
 	if( PORTB & _BV(LED_PIN) ) {
@@ -145,8 +148,6 @@ static void eraseFlash()
  */
 uchar usbFunctionWrite( uchar *data, uchar len )
 {
-uchar i;
-
 	// offset - позиция в report-е.
 	offset += len;
 	// Если это первая порция
@@ -170,8 +171,8 @@ uchar i;
 	}
 	
 	if( cmd & DO_WRITE_FLASH ) {
-		
-		for( i = 0; i < len; i += 2 ) {
+		uchar * end = data + len;
+		while( data < end ) {
 			writeWord( *(int16_t*)data );
 			data += 2;
 		}
