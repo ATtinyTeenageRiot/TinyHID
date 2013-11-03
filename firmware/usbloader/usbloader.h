@@ -21,65 +21,68 @@
  */
 
 
+// Optional capabilities. Read flash memory, erase eeprom and other
+// Any capability increase bootloader size, so set 1 only for caps, that you need
+
+// Set to 1 to bootloader could clear EEPROM, or 0 otherwise
+#define CAN_ERASE_EEPROM 0
+// Set to 1 to bootloader could read FLASH, or 0 otherwise
+#define CAN_READ_FLASH 0
+// Set to 1 to bootloader could exit by the USB command, or 0 otherwise
+#define CAN_LEAVE_LOADER 1
+// Set to PIN number, to blink LED while FLASH write, or comment otherwise
+// #define LED_PIN 4
+// Set to PIN number, to use jumper for Loader Start Condition, or comment otherwise
+#define START_JUMPER_PIN 0
+
+
 #ifndef __ASSEMBLER__
 
 	#include <avr/eeprom.h>
 	#include <avr/pgmspace.h>
 
-	#define START_JUMPER_PIN 0
 	#define digitalRead(pin) (PINB & _BV(pin))
 	#define bootLoaderCondition() 1
 	
-	// Условие входа в загрузчик. Иначе будет выполнен переход на основную программу
+	// Bootloader start condition. Otherwise jump to application
 	static inline uint8_t bootLoaderStartCondition()
 	{
-		// Если замкнута с землёй нога 0
+		// Start bootloader if START_JUMPER_PIN is connected to ground
+#ifdef START_JUMPER_PIN		
 		if( !digitalRead( START_JUMPER_PIN ) ) return 1;
-		// Если в векторе INT0 записан NOP (это может быть только если память пуста)
+#endif
+		// Start bootloader if INT0 vector contains NOP command (which means than flash is empty)
 		if( pgm_read_byte( 3 ) == 0xff ) return 1;
-		// Если основная программа принудительно запустила bootloader
+		// Start bootloader by following application code:
+		// WRITE DOWN THIS CODE IN YOUR APP
+		// cli();
+		// TCCR1 = 0;
+		// TCNT1 = 0xff;
+		// asm volatile ("rjmp __vectors");
+		// END CODE
 		if( TCNT1 == 0xff ) return 1;
 		return 0;
 	}
 
-	// Инициализация загрузчика. Выполняется сразу после RESET-а
+	// Bootloader init. Typically used for pin pullup's
 	static inline void  bootLoaderInit(void) 
 	{
 		// DeuxVis pin-0 pullup
 		PORTB |= _BV(START_JUMPER_PIN); // has pullup enabled
 	}
 	
-	// Очистка всех использованых выше регистров
+	// Bootloader clear. Typically used for clearing pullap's
 	static inline void  bootLoaderExit(void) 
 	{
 		PORTB = 0;
-		// DeuxVis pin-0 pullup
 	}
 	
-	// Действие, выполняемое по комманде bootloaderexit
-	static inline void leaveLoader()
-	{
-	}
+	// Additional acion on program leaving bootloader
+	#define leaveLoader()
 	
 #endif
 
-// Чем больше единичек, тем больше вес бутлодера
-// Оптимально проставлять только необходимые функции
-
-// Может ли считать количество idle циклов
-#define CAN_COUNT_POLLS 0
-// Может ли тереть EEPROM
-#define CAN_ERASE_EEPROM 0
-// Может ли писать память
-#define CAN_READ_FLASH 0
-// Может ли покидать загрузчик по команде
-#define CAN_LEAVE_LOADER 1
-// Если объявлен, то в процессе записи будет мигать светодиодом.
-// #define LED_PIN 4
-
-
-
-// Константы, свойственные протоколу и самой тиньке
+// Protocol constants
 #define LOADER_REPORT_SIZE ( SPM_PAGESIZE + 2 )
 #define SPM_PAGESHIFT 6
 #define REPORT_COMMAND 0

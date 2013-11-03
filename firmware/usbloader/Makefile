@@ -151,7 +151,7 @@ DEFINES = -DBOOTLOADER_ADDRESS=0x$(BOOTLOADER_ADDRESS) #-DDEBUG_LEVEL=2
 CFLAGS = -Wall -Os -fno-move-loop-invariants -fno-tree-scev-cprop -fno-inline-small-functions -I. -Ilibs-device -mmcu=$(DEVICE) -DF_CPU=$(F_CPU) $(DEFINES)
 LDFLAGS = -Wl,--relax,--gc-sections -Wl,--section-start=.text=$(BOOTLOADER_ADDRESS),-Map=main.map
 
-OBJECTS =  libs-device/osccal.o main.o usbdrv/oddebug.o
+OBJECTS =  main.o usbdrv/oddebug.o
 OBJECTS += usbdrv/usbdrvasm.o
 
 # symbolic targets:
