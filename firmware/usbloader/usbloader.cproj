@@ -62,7 +62,7 @@
   <avrgcc.compiler.symbols.DefSymbols>
     <ListValues>
       <Value>F_CPU=16500000</Value>
-      <Value>BOOTLOADER_ADDRESS=0x1800</Value>
+      <Value>BOOTLOADER_WADDRESS=0xc00</Value>
     </ListValues>
   </avrgcc.compiler.symbols.DefSymbols>
   <avrgcc.compiler.directories.IncludePaths>

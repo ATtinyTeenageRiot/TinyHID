@@ -84,7 +84,6 @@
 
 // Protocol constants
 #define LOADER_REPORT_SIZE ( SPM_PAGESIZE + 2 )
-#define SPM_PAGESHIFT 6
 #define REPORT_COMMAND 0
 #define REPORT_DATA 2
 #define REPORT_CRC 1

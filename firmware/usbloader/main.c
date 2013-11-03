@@ -63,6 +63,15 @@ static uchar cmd = 0;
 static uchar delay = 0;
 static uint16_t vectors[2];
 
+#ifndef BOOTLOADER_ADDRESS
+#define BOOTLOADER_ADDRESS ( BOOTLOADER_WADDRESS * 2 )
+#endif
+
+#if ( BOOTLOADER_ADDRESS % SPM_PAGESIZE ) != 0
+#error Bootloader address must be aligned by page size
+#endif
+
+
 #if CAN_READ_FLASH
 static uchar exchangeReport[70];
 #endif
