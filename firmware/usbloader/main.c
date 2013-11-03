@@ -89,7 +89,6 @@ static void writeWord( uint16_t word )
 uint16_t addr = currentAddress;
 	// Записываем программные вектора во flash, чтобы уметь на них уходить
 	// Мы их предоставим-таки программе, но иначе
-	
 	if ( addr == APP_RESET_ADDR ) {
 		word = vectors[0] + APP_RESET_SHIFT;
 	} else if ( addr == APP_PCINT_ADDR ) {
@@ -109,7 +108,7 @@ uint16_t addr = currentAddress;
 static void writePage()
 {
 	// Мы не должны писать в самого себя
-	if( currentAddress >= BOOTLOADER_ADDRESS ) return;
+	if( currentAddress > BOOTLOADER_ADDRESS ) return;
 	
 	boot_page_write( currentAddress - SPM_PAGESIZE );
 #ifdef LED_PIN
