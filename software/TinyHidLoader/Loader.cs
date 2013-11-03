@@ -46,6 +46,23 @@ namespace DeliSu.TinyHidLoader
             return null;
         }
 
+
+        public static Loader TryGetLoader(int timeout)
+        {
+            for (int i = 0; ; i++)
+            {
+                try
+                {
+                    return new Loader();
+                }
+                catch
+                {
+                    if (i > timeout) throw;
+                    Thread.Sleep(1000);
+                }
+            }
+        }
+
         static byte Crc8(byte[] buffer, int offset, int count)
         {
             byte crc = 0;
