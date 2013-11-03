@@ -31,7 +31,10 @@ namespace DeliSu.TinyHidLoader
                 file.Fill(programm);
                 try
                 {
+                    DateTime now = DateTime.Now;
                     ldr.WriteFlash(programm, 0);
+                    int ellapsed = (int)(DateTime.Now - now).TotalMilliseconds;
+                    Console.WriteLine("Done in {0} ms", ellapsed);
                 }
                 catch (Exception e)
                 {

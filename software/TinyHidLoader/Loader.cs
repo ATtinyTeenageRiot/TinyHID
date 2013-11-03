@@ -242,7 +242,7 @@ namespace DeliSu.TinyHidLoader
                     }
                     if (buffer[REPORT_COMMAND] == (byte)LoaderCommand.WriteFlash)
                     {
-                        Thread.Sleep(20);
+                        Thread.Sleep(5);
                     }
                     else
                     {
