@@ -37,6 +37,7 @@
 1.0 (August 28, 2010):
   Initial release.</releaseNotes>
     <copyright>Copyright 2010-2013 James Bellinger</copyright>
+    <language />
     <tags>USB HID Windows MacOS Linux Mono</tags>
   </metadata>
 </package>

@@ -7,3 +7,5 @@ software/TinyHidLoader/obj/*
 *.user
 firmware/usbloader/usbloader.atsuo
 firmware/TinyHIDLoader.atsuo
+software/TinyLoaderCmd/bin/*
+software/TinyLoaderCmd/obj/*

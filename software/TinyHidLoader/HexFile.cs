@@ -2,9 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace DeliSu
 {
@@ -49,13 +47,15 @@ namespace DeliSu
 
         public List<HexChunk> Chunks { get; set; }
 
-        string filename;
-
         public HexFile(string filename)
         {
-            this.filename = filename;
             Chunks = new List<HexChunk>();
-            ReadAll();
+            Open(filename);
+        }
+
+        public HexFile()
+        {
+            Chunks = new List<HexChunk>();
         }
 
         private void AppendData(long offset, byte[] data)
@@ -93,20 +93,20 @@ namespace DeliSu
             }
         }
 
-        private void ReadAll()
+        public void Open(string filename)
         {
             long currentOffset = 0;
             int ln = 0;
             bool hasEnd = false;
             foreach (string line in File.ReadAllLines(filename))
             {
-                if(string.IsNullOrWhiteSpace(line)) continue;
+                if (string.IsNullOrEmpty(line)) continue;
                 if (hasEnd) throw new FormatException("Dataline after end at " + ln + ": " + line);
 
                 if (line.Length < 11) throw new FormatException("Invalid line, too short at " + ln + ": " + line);
                 int length = int.Parse(line.Substring(1, 2), NumberStyles.HexNumber);
                 if (line.Trim().Length != 11 + length * 2) throw new FormatException("Invalid line, invalid length at " + ln + ": " + line);
-                
+
                 int address = int.Parse(line.Substring(3, 4), NumberStyles.HexNumber);
                 int type = int.Parse(line.Substring(7, 2), NumberStyles.HexNumber);
                 int summ = length + (address & 0xff) + (address >> 8 & 0xff) + type;
@@ -126,7 +126,7 @@ namespace DeliSu
                 {
                     hasEnd = true;
                 }
-                else if(type == 2)
+                else if (type == 2)
                 {
                     currentOffset = (data[0] << 12) | (data[1] << 4);
                 }
@@ -148,6 +148,37 @@ namespace DeliSu
             if (!hasEnd)
             {
                 throw new FormatException("No file end directive found");
+            }
+        }
+
+        public void Write(string filename)
+        {
+            using (StreamWriter writer = new StreamWriter(filename))
+            {
+                foreach (HexChunk chunk in Chunks)
+                {
+                    byte[] buffer = chunk.Data;
+                    int rest = buffer.Length;
+                    int address = (int)chunk.Offset;
+                    for (int i = 0; i < buffer.Length; i += 16)
+                    {
+                        int length = rest > 16 ? 16 : rest;
+                        byte cycl = (byte)length;
+                        writer.Write(":{0:X2}{1:X4}00", length, address);
+                        cycl = (byte)(cycl + (address & 0xff));
+                        cycl = (byte)(cycl + ((address >> 8) & 0xff));
+                        for (int j = 0; j < length; j++)
+                        {
+                            writer.Write("{0:X2}", buffer[i + j]);
+                            cycl += buffer[i + j];
+                        }
+                        writer.Write("{0:X2}", (byte)(0x100 - cycl));
+                        address += 16;
+                        rest -= 16;
+                        writer.WriteLine();
+                    }
+                }
+                writer.WriteLine(":00000001FF");
             }
         }
     }

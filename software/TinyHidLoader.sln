@@ -3,6 +3,8 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TinyHidLoader", "TinyHidLoader\TinyHidLoader.csproj", "{4F63DA64-FE02-4CEE-9FD3-9A7336B2445D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TinyLoaderCmd", "TinyLoaderCmd\TinyLoaderCmd.csproj", "{CD4E5716-D7F1-46DE-A960-C234732A31E1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -13,6 +15,10 @@ Global
 		{4F63DA64-FE02-4CEE-9FD3-9A7336B2445D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4F63DA64-FE02-4CEE-9FD3-9A7336B2445D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4F63DA64-FE02-4CEE-9FD3-9A7336B2445D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CD4E5716-D7F1-46DE-A960-C234732A31E1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CD4E5716-D7F1-46DE-A960-C234732A31E1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CD4E5716-D7F1-46DE-A960-C234732A31E1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CD4E5716-D7F1-46DE-A960-C234732A31E1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
