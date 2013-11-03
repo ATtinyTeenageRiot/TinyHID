@@ -49,13 +49,15 @@ namespace DeliSu
 
         public List<HexChunk> Chunks { get; set; }
 
-        string filename;
-
         public HexFile(string filename)
         {
-            this.filename = filename;
             Chunks = new List<HexChunk>();
-            ReadAll();
+            Open(filename);
+        }
+
+        public HexFile()
+        {
+            Chunks = new List<HexChunk>();
         }
 
         private void AppendData(long offset, byte[] data)
@@ -93,7 +95,7 @@ namespace DeliSu
             }
         }
 
-        private void ReadAll()
+        public void Open(string filename)
         {
             long currentOffset = 0;
             int ln = 0;
@@ -148,6 +150,37 @@ namespace DeliSu
             if (!hasEnd)
             {
                 throw new FormatException("No file end directive found");
+            }
+        }
+
+        public void Write(string filename)
+        {
+            using (StreamWriter writer = new StreamWriter(filename))
+            {
+                foreach (HexChunk chunk in Chunks)
+                {
+                    byte[] buffer = chunk.Data;
+                    int rest = buffer.Length;
+                    int address = (int)chunk.Offset;
+                    for (int i = 0; i < buffer.Length; i += 16)
+                    {
+                        int length = rest > 16 ? 16 : rest;
+                        byte cycl = (byte)length;
+                        writer.Write(":{0:X2}{1:X4}00", length, address);
+                        cycl = (byte)(cycl + (address & 0xff));
+                        cycl = (byte)(cycl + ((address >> 8) & 0xff));
+                        for (int j = 0; j < length; j++)
+                        {
+                            writer.Write("{0:X2}", buffer[i + j]);
+                            cycl += buffer[i + j];
+                        }
+                        writer.Write("{0:X2}", (byte)(0x100 - cycl));
+                        address += 16;
+                        rest -= 16;
+                        writer.WriteLine();
+                    }
+                }
+                writer.WriteLine(":00000001FF");
             }
         }
     }

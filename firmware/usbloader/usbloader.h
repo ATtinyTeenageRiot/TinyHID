@@ -67,15 +67,15 @@
 // Оптимально проставлять только необходимые функции
 
 // Может ли считать количество idle циклов
-#define CAN_COUNT_POLLS 0
+#define CAN_COUNT_POLLS 1
 // Может ли тереть EEPROM
-#define CAN_ERASE_EEPROM 0
+#define CAN_ERASE_EEPROM 1
 // Может ли писать память
-#define CAN_READ_FLASH 0
+#define CAN_READ_FLASH 1
 // Может ли покидать загрузчик по команде
 #define CAN_LEAVE_LOADER 1
 // Если объявлен, то в процессе записи будет мигать светодиодом.
-// #define LED_PIN 4
+#define LED_PIN 4
 
 
 
