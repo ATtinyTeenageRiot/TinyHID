@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+  <metadata>
+    <id>HidSharp</id>
+    <version>1.5</version>
+    <title>HIDSharp</title>
+    <authors>James F. Bellinger</authors>
+    <owners>James F. Bellinger</owners>
+    <licenseUrl>http://www.zer7.com/files/oss/hidsharp/License.txt</licenseUrl>
+    <projectUrl>http://www.zer7.com/software/hidsharp</projectUrl>
+    <requireLicenseAcceptance>true</requireLicenseAcceptance>
+    <description>HIDSharp is a cross-platform .NET wrapper for Windows, MacOS, and Linux (hidraw) USB HID APIs.</description>
+    <releaseNotes>1.5 (May 18, 2013):
+  Added the DevicePath property to HidDevice.
+  This is useful for differentiating devices with the same VID, PID, etc.
+
+1.4.0.1 (April 21, 2013):
+  Added missing XML documentation file to the archive.
+
+1.4 (April 20, 2013):
+  Documented the most important classes.
+  Fixed a problem with output reports on 64-bit Windows.
+  Fixed a timeout bug on Windows.
+  Parallelized device enumeration.
+  Reordered platform detection to prevent binary planting on Windows.
+
+1.3 (February 23, 2013):
+  Fixed Linux libudev reference to not require developer package symlinks.
+  
+1.2 (October 16, 2012):
+  Fixed MacOS support.
+
+1.1 (July 28, 2012):
+  Added experimental MacOS and Linux support.
+  Added experimental report descriptor parsing.
+  
+1.0 (August 28, 2010):
+  Initial release.</releaseNotes>
+    <copyright>Copyright 2010-2013 James Bellinger</copyright>
+    <tags>USB HID Windows MacOS Linux Mono</tags>
+  </metadata>
+</package>

@@ -1,0 +1,9 @@
+syntax: glob
+firmware/usbloader/Debug/*
+firmware/usbloader/Release/*
+firmware/usbloader.atsuo
+software/TinyHidLoader/bin/*
+software/TinyHidLoader/obj/*
+*.suo
+*.user
+firmware/usbloader/usbloader.atsuo
