@@ -26,6 +26,8 @@ at least be connected to INT0 as well.
 #include "usbdrv.h"
 #include "usbloader.h"
 
+char lastTimer0Value;
+
 /* ------------------------------------------------------------------------- */
 /* ----------------------------- USB interface ----------------------------- */
 /* ------------------------------------------------------------------------- */
@@ -250,7 +252,8 @@ static inline void leaveBootloader() {
 #ifdef LED_PIN
 	DDRB = 0;
 	PORTB = 0;
-#endif		
+#endif
+	TCCR0B = 0;
 
     // И переходим по reset-вектору приложения
     asm volatile ("rjmp __vectors - 4");
@@ -278,7 +281,7 @@ int main()
 #ifdef LED_PIN
 		DDRB |= _BV(LED_PIN);
 #endif		
-		
+		TCCR0B = _BV(CS01) | _BV(CS00);
 		do
 		{
 			usbPoll();

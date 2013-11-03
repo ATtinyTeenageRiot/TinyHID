@@ -12,6 +12,7 @@
 #define __usbconfig_h_included__
 
 #include "usbloader.h"
+#include "osctune.h"
 
 
 /* ---------------------------- Hardware Config ---------------------------- */
@@ -95,16 +96,7 @@
  * usbdrv.h.
  */
 
-#ifndef __ASSEMBLER__
-#include <avr/interrupt.h>  // for sei()
-extern void calibrateOscillator(void);
-#endif
-#define USB_RESET_HOOK(resetStarts)  if(!resetStarts){cli(); calibrateOscillator(); sei();}
-/* This macro is a hook if you need to know when an USB RESET occurs. It has
- * one parameter which distinguishes between the start of RESET state and its
- * end.
- */
-#define USB_CFG_HAVE_MEASURE_FRAME_LENGTH   1
+#define USB_CFG_HAVE_MEASURE_FRAME_LENGTH   0
 /* define this macro to 1 if you want the function usbMeasureFrameLength()
  * compiled in. This function can be used to calibrate the AVR's RC oscillator.
  */
@@ -255,7 +247,7 @@ extern void calibrateOscillator(void);
 /* #define USB_INTR_PENDING_BIT    INTF0 */
 
 #define USB_INTR_CFG            PCMSK
-#define USB_INTR_CFG_SET        (1 << USB_CFG_DPLUS_BIT)
+#define USB_INTR_CFG_SET        (1 << USB_CFG_DMINUS_BIT)
 #define USB_INTR_CFG_CLR        0
 #define USB_INTR_ENABLE         GIMSK
 #define USB_INTR_ENABLE_BIT     PCIE
