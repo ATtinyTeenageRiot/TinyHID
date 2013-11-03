@@ -25,8 +25,8 @@ namespace DeliSu.TinyHidLoader
         public const int LOADERSTART = 0x1700 - 4;
         const int REPORT_SIZE = PAGESIZE + 3;
         const int REPORT_COMMAND = 1;
-        const int REPORT_DATA = 2;
-        const int REPORT_CRC = PAGESIZE + 2;
+        const int REPORT_DATA = 3;
+        const int REPORT_CRC = 2;
 
         HidDevice dev;
 
@@ -82,8 +82,8 @@ namespace DeliSu.TinyHidLoader
             using (HidStream stream = dev.Open())
             {
                 byte[] buffer = new byte[67];
-                buffer[1] = (byte)LoaderCommand.EraseEeprom;
-                buffer[REPORT_CRC] = Crc8(buffer, 1, 65);
+                buffer[REPORT_COMMAND] = (byte)LoaderCommand.EraseEeprom;
+                buffer[REPORT_CRC] = Crc8(buffer, REPORT_DATA, PAGESIZE);
                 stream.SetFeature(buffer);
             }
         }
@@ -96,8 +96,8 @@ namespace DeliSu.TinyHidLoader
             using (HidStream stream = dev.Open())
             {
                 byte[] buffer = new byte[REPORT_SIZE];
-                buffer[1] = (byte)LoaderCommand.EraseFlash;
-                buffer[66] = Crc8(buffer, 1, 65);
+                buffer[REPORT_COMMAND] = (byte)LoaderCommand.EraseFlash;
+                buffer[REPORT_CRC] = Crc8(buffer, REPORT_DATA, PAGESIZE);
                 stream.SetFeature(buffer);
             }
         }
@@ -113,8 +113,8 @@ namespace DeliSu.TinyHidLoader
             using (HidStream stream = dev.Open())
             {
                 byte[] buffer = new byte[REPORT_SIZE];
-                buffer[1] = (byte)LoaderCommand.LeaveBootloader;
-                buffer[66] = Crc8(buffer, 1, 65);
+                buffer[REPORT_COMMAND] = (byte)LoaderCommand.LeaveBootloader;
+                buffer[REPORT_CRC] = Crc8(buffer, 1, 65);
                 stream.SetFeature(buffer);
             }
         }
@@ -136,7 +136,7 @@ namespace DeliSu.TinyHidLoader
             using (HidStream stream = dev.Open())
             {
                 byte[] buffer = new byte[REPORT_SIZE];
-                buffer[1] = (byte)LoaderCommand.ReadFlash;
+                buffer[REPORT_COMMAND] = (byte)LoaderCommand.ReadFlash;
                 buffer[REPORT_CRC] = Crc8(buffer, REPORT_COMMAND, REPORT_CRC - REPORT_COMMAND);
                 stream.SetFeature(buffer);
                 int readed = 0;
@@ -171,7 +171,7 @@ namespace DeliSu.TinyHidLoader
             using (HidStream dstream = dev.Open())
             {
                 byte[] buffer = new byte[REPORT_SIZE];
-                buffer[1] = (byte)LoaderCommand.ReadFlash;
+                buffer[REPORT_COMMAND] = (byte)LoaderCommand.ReadFlash;
                 buffer[REPORT_CRC] = Crc8(buffer, 1, REPORT_CRC - REPORT_COMMAND);
                 dstream.SetFeature(buffer);
                 int readed = 0;
@@ -205,6 +205,7 @@ namespace DeliSu.TinyHidLoader
             using (HidStream stream = dev.Open())
             {
                 byte[] buffer = new byte[REPORT_SIZE + 1];
+
                 int writed = 0;
                 while (true)
                 {
@@ -223,7 +224,7 @@ namespace DeliSu.TinyHidLoader
                             buffer[i] = programm[offset++];
                         }
                     }
-                    buffer[REPORT_CRC] = Crc8(buffer, REPORT_COMMAND, REPORT_CRC - REPORT_COMMAND);
+                    buffer[REPORT_CRC] = Crc8(buffer, REPORT_DATA, PAGESIZE);
                     for (int i = 0; ; i++)
                     {
                         try
@@ -239,7 +240,7 @@ namespace DeliSu.TinyHidLoader
                             Thread.Sleep(400);
                         }
                     }
-                    if (buffer[1] == (byte)LoaderCommand.WriteFlash)
+                    if (buffer[REPORT_COMMAND] == (byte)LoaderCommand.WriteFlash)
                     {
                         Thread.Sleep(20);
                     }

@@ -54,8 +54,6 @@ PROGMEM const char usbHidReportDescriptor[22] = {    /* USB report descriptor */
 #define DO_LEAVE_BOOTLOADER 0x80
 
 /* The following variables store the status of the current data transfer */
-//static uchar currentAddress;
-//static uchar bytesRemaining;
 static uchar offset;
 
 static uint16_t currentAddress = 0;
@@ -104,6 +102,11 @@ void writeWord( uint16_t word )
 static inline void writePage()
 {
 	boot_page_write( currentAddress - SPM_PAGESIZE );
+	DDRB |= _BV(4);
+	PORTB |= _BV(4);
+	_delay_ms(20);
+	PORTB &= ~_BV(4);
+	DDRB &= ~_BV(4);
 }
 
 static void writeInitialPage()
@@ -112,20 +115,21 @@ uchar i;
 	for( i = 0; i < SPM_PAGESIZE / 2; i++ ) {
 		writeWord( 0xffff );
 	}
-	boot_page_write( 0 );
+	writePage();
 }
 
 static void eraseFlash()
 {
-    currentAddress = BOOTLOADER_ADDRESS;
-    while( currentAddress ) {
-        currentAddress -= SPM_PAGESIZE;
-        
-        boot_page_erase( currentAddress );
+	uint16_t addr = BOOTLOADER_ADDRESS;
+    while( addr ) {
+        addr -= SPM_PAGESIZE;
+        boot_page_erase( addr );
     }
+
     // ≈сли нас запросили записать страницу, то незачем писать еЄ дважды
     if( ( cmd & DO_WRITE_FLASH ) == 0 ) 
 		writeInitialPage();
+		
 }
 
 /* usbFunctionWrite() is called when the host sends a chunk of data to the
@@ -145,11 +149,13 @@ uchar i;
 		
 #if CAN_READ_FLASH
 		// ≈сли нужно читать flash, то запомниать команду не надо
-		if( cmd == DO_READ_FLASH ) {
-			currentAddress = 0;
-		} else
+		if( cmd != DO_READ_FLASH )
 #endif 
 		cmd = data[ REPORT_COMMAND ];
+		
+		if( cmd != DO_WRITE_FLASH ) {
+			currentAddress = 0;
+		}
 
 		data += REPORT_DATA;
 		len -= REPORT_DATA;
