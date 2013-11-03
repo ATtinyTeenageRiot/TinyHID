@@ -102,11 +102,13 @@ void writeWord( uint16_t word )
 static inline void writePage()
 {
 	boot_page_write( currentAddress - SPM_PAGESIZE );
-	DDRB |= _BV(4);
-	PORTB |= _BV(4);
-	_delay_ms(20);
-	PORTB &= ~_BV(4);
-	DDRB &= ~_BV(4);
+#ifdef LED_PIN
+	if( PORTB & _BV(LED_PIN) ) {
+		PORTB &= ~_BV(LED_PIN);
+	} else {
+		PORTB |= _BV(LED_PIN);
+	}
+#endif		
 }
 
 static void writeInitialPage()
@@ -245,6 +247,11 @@ static inline void leaveBootloader() {
 	// Переключаем PCINT на приложение
 	TCNT1 = 0;
 
+#ifdef LED_PIN
+	DDRB = 0;
+	PORTB = 0;
+#endif		
+
     // И переходим по reset-вектору приложения
     asm volatile ("rjmp __vectors - 4");
 }
@@ -268,6 +275,10 @@ int main()
 
 	if( bootLoaderStartCondition() ) {
 		initForUsbConnectivity();
+#ifdef LED_PIN
+		DDRB |= _BV(LED_PIN);
+#endif		
+		
 		do
 		{
 			usbPoll();
