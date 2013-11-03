@@ -22,7 +22,7 @@ namespace DeliSu.TinyHidLoader
     public class Loader
     {
         public const int PAGESIZE = 64;
-        public const int LOADERSTART = 0x1700 - 4;
+        public const int LOADERSTART = 0x1800 - 4;
         const int REPORT_SIZE = PAGESIZE + 3;
         const int REPORT_COMMAND = 1;
         const int REPORT_DATA = 3;

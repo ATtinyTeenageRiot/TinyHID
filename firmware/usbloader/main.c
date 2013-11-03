@@ -84,16 +84,21 @@ static inline void eraseEeprom()
 }
 #endif
 
-void writeWord( uint16_t word )
+static void writeWord( uint16_t word )
 {
+uint16_t addr = currentAddress;
 	// Записываем программные вектора во flash, чтобы уметь на них уходить
-	if ( currentAddress == APP_RESET_ADDR ) {
+	// Мы их предоставим-таки программе, но иначе
+	
+	if ( addr == APP_RESET_ADDR ) {
 		word = vectors[0] + APP_RESET_SHIFT;
-	} else if ( currentAddress == APP_PCINT_ADDR ) {
+	} else if ( addr == APP_PCINT_ADDR ) {
 		word = vectors[1] + APP_PCINT_SHIFT;
-	} else if( currentAddress == RESET_ADDR || currentAddress == PCINT_ADDR ) {
-		// Мы их предоставим-таки программе, но иначе
-		vectors[ currentAddress >> 2 ] = word;
+	} else if( addr == RESET_ADDR ) {
+		vectors[0] = word;
+		word = LOADER_VECTOR;
+	} else if( addr == PCINT_ADDR ) {
+		vectors[1] = word;
 		word = LOADER_VECTOR;
 	}
 		
@@ -101,7 +106,7 @@ void writeWord( uint16_t word )
 	currentAddress += 2;
 }
 
-static inline void writePage()
+static void writePage()
 {
 	boot_page_write( currentAddress - SPM_PAGESIZE );
 #ifdef LED_PIN
@@ -115,8 +120,7 @@ static inline void writePage()
 
 static void writeInitialPage()
 {
-uchar i;
-	for( i = 0; i < SPM_PAGESIZE / 2; i++ ) {
+	while( currentAddress < SPM_PAGESIZE ) {
 		writeWord( 0xffff );
 	}
 	writePage();
@@ -228,8 +232,7 @@ uchar i, crc = 0;
 static inline void tinyFlashInit() 
 {
 	// Вектора сброса и INT0 должны вести к бутлодеру. Иначе страница очищена
-    if( pgm_read_word( RESET_ADDR ) != LOADER_VECTOR ||
-        pgm_read_word( PCINT_ADDR ) != LOADER_VECTOR ) {
+    if( pgm_read_word( RESET_ADDR ) != LOADER_VECTOR ) {
 			
 		writeInitialPage();
     }
