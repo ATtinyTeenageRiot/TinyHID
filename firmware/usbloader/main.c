@@ -110,13 +110,14 @@ static void writePage()
 	// Мы не должны писать в самого себя
 	if( currentAddress > BOOTLOADER_ADDRESS ) return;
 	
-	boot_page_write( currentAddress - SPM_PAGESIZE );
 #ifdef LED_PIN
-	if( PORTB & _BV(LED_PIN) ) {
-		PORTB &= ~_BV(LED_PIN);
-	} else {
-		PORTB |= _BV(LED_PIN);
-	}
+	PORTB |= _BV(LED_PIN);
+#endif		
+
+	boot_page_write( currentAddress - SPM_PAGESIZE );
+
+#ifdef LED_PIN
+	PORTB &= ~_BV(LED_PIN);
 #endif		
 }
 
@@ -147,6 +148,8 @@ static void eraseFlash()
  */
 uchar usbFunctionWrite( uchar *data, uchar len )
 {
+uchar * end;
+
 	// offset - позиция в report-е.
 	offset += len;
 	// Если это первая порция
@@ -154,11 +157,6 @@ uchar usbFunctionWrite( uchar *data, uchar len )
 		// Если у нас на очереди есть команда, которая ещё не выполнена
 		// то мы вынуждены отказать
 		if( cmd ) return 0xff;
-		
-#if CAN_READ_FLASH
-		// Если нужно читать flash, то запомниать команду не надо
-		if( cmd != DO_READ_FLASH )
-#endif 
 		cmd = data[ REPORT_COMMAND ];
 		
 		if( cmd != DO_WRITE_FLASH ) {
@@ -170,7 +168,7 @@ uchar usbFunctionWrite( uchar *data, uchar len )
 	}
 	
 	if( cmd & DO_WRITE_FLASH ) {
-		uchar * end = data + len;
+		end = data + len;
 		while( data < end ) {
 			writeWord( *(int16_t*)data );
 			data += 2;
@@ -251,6 +249,7 @@ static inline void leaveBootloader() {
     USB_INTR_CFG = 0;
 	// Переключаем PCINT на приложение
 	TCNT1 = 0;
+	TCNT0 = 0;
 
 #ifdef LED_PIN
 	DDRB = 0;
