@@ -54,15 +54,18 @@ PROGMEM const char usbHidReportDescriptor[22] = {    /* USB report descriptor */
 #define DO_LEAVE_BOOTLOADER 0x80
 
 /* The following variables store the status of the current data transfer */
-static uchar currentAddress;
-static uchar bytesRemaining;
+//static uchar currentAddress;
+//static uchar bytesRemaining;
+static uchar offset;
 
-static uint16_t workAddress = 0;
-static uchar cmd;
+static uint16_t currentAddress = 0;
+static uchar cmd = 0;
 static uchar delay = 0;
-static uchar exchangeReport[70];
 static uint16_t vectors[2];
 
+#if CAN_READ_FLASH
+static uchar exchangeReport[70];
+#endif
 #if CAN_COUNT_POLLS
 uint16_t idlePolls = 0;
 #endif
@@ -81,61 +84,43 @@ static inline void eraseEeprom()
 }
 #endif
 
-static void writePage()
+void writeWord( uint16_t word )
 {
-	uchar i;
-	uint16_t w, addr = workAddress;
-	
-	if( addr >= BOOTLOADER_ADDRESS ) return;
-
-	// Дожидаемся окончания записи в EEPROM
-#if CAN_ERASE_EEPROM
-	eeprom_busy_wait();
-#endif
-	// И окончания записи в FLASH
-			
-	// И пишем помаленьку в буффер
-	uchar * buf = exchangeReport + REPORT_DATA;
-	
-	for ( i = 0; i < SPM_PAGESIZE; i += 2 )
-	{
-		w = *buf++;
-		w += ( *buf++ ) << 8;
-
-		// Записываем программные вектора во flash, чтобы уметь на них уходить
-		if ( addr == APP_RESET_ADDR ) {
-			w = vectors[0] + APP_RESET_SHIFT;
-		} else if ( addr == APP_PCINT_ADDR ) {
-			w = vectors[1] + APP_PCINT_SHIFT;
-		} else if( addr == RESET_ADDR || addr == PCINT_ADDR ) {
-			// Мы их предоставим-таки программе, но иначе
-			vectors[ i >> 2 ] = w;
-			w = LOADER_VECTOR;
-		}
-		boot_page_fill( addr, w );
-		addr += 2;
+	// Записываем программные вектора во flash, чтобы уметь на них уходить
+	if ( currentAddress == APP_RESET_ADDR ) {
+		word = vectors[0] + APP_RESET_SHIFT;
+	} else if ( currentAddress == APP_PCINT_ADDR ) {
+		word = vectors[1] + APP_PCINT_SHIFT;
+	} else if( currentAddress == RESET_ADDR || currentAddress == PCINT_ADDR ) {
+		// Мы их предоставим-таки программе, но иначе
+		vectors[ currentAddress >> 2 ] = word;
+		word = LOADER_VECTOR;
 	}
-	boot_page_write( workAddress );
-	workAddress = addr;
+		
+	boot_page_fill( currentAddress, word );
+}
+
+static inline void writePage()
+{
+	boot_page_write( currentAddress - SPM_PAGESIZE );
 }
 
 static void writeInitialPage()
 {
-	uchar i;
-	for( i = 0; i < LOADER_REPORT_SIZE; i++ ) {
-		exchangeReport[i] = 0xff;
+uchar i;
+
+	for( i = 0; i < SPM_PAGESIZE / 2; i++ ) {
+		writeWord( 0xffff );
 	}
-		
-	writePage();
 }
 
 static void eraseFlash()
 {
-    workAddress = BOOTLOADER_ADDRESS;
-    while( workAddress ) {
-        workAddress -= SPM_PAGESIZE;
+    currentAddress = BOOTLOADER_ADDRESS;
+    while( currentAddress ) {
+        currentAddress -= SPM_PAGESIZE;
         
-        boot_page_erase( workAddress );
+        boot_page_erase( currentAddress );
     }
     // Если нас запросили записать страницу, то незачем писать её дважды
     if( ( cmd & DO_WRITE_FLASH ) == 0 ) 
@@ -147,98 +132,94 @@ static void eraseFlash()
  */
 uchar usbFunctionWrite( uchar *data, uchar len )
 {
-	uchar i, crc = 0;
-	
-    if( bytesRemaining == 0 ) {
-        return 1;               /* end of transfer */
-	}
-    if( len > bytesRemaining ) {
-        len = bytesRemaining;
-	}
-	for( i = 0; i < len; i++ ) {
-		exchangeReport[ currentAddress + i ] = data[ i ];
-	}
+uchar i;
+
+	// offset - позиция в report-е.
+	offset += len;
+	// Если это первая порция
+	if( offset == len ) {
+		// Если у нас на очереди есть команда, которая ещё не выполнена
+		// то мы вынуждены отказать
+		if( cmd ) return 0xff;
 		
-    currentAddress += len;
-    bytesRemaining -= len;
-	
-	if( bytesRemaining == 0 ) {
-		
-		for( i = 0; i < REPORT_CRC; i++ ) {
-			crc = _crc_ibutton_update( crc, exchangeReport[i] );
-		}
-		
-		// Приступаем к работе только если: совпадает crc8, и адрес не перекрывает бутлоадер
-		if( crc == exchangeReport[ REPORT_CRC ] && cmd == 0 ) {
-#if CAN_READ_FLASH			
-			if( exchangeReport[ REPORT_COMMAND ] == DO_READ_FLASH ) {
-				workAddress = 0;
-			} else
+#if CAN_READ_FLASH
+		// Если нужно читать flash, то запомниать команду не надо
+		if( cmd == DO_READ_FLASH ) {
+			currentAddress = 0;
+		} else
 #endif 
-			cmd = exchangeReport[ REPORT_COMMAND ];
-			delay = 10;
-			
-		} else {
-			
-			// Не совпал crc - отвечаем ошибкой
-			return 0xff;
-		}
+		cmd = data[ REPORT_COMMAND ];
+
+		data += REPORT_DATA;
+		len -= REPORT_DATA;
 	}
 	
-    return bytesRemaining == 0; /* return 1 if this was the last chunk */
+	if( cmd & DO_WRITE_FLASH ) {
+		
+		for( i = 0; i < len; i += 2 ) {
+			writeWord( *(int16_t*)data );
+			data += 2;
+		}
+	}
+	if( offset == LOADER_REPORT_SIZE ) {
+		delay = 10;
+		return 1;
+	}
+	return 0;
 }
 
 /* ------------------------------------------------------------------------- */
 
 usbMsgLen_t usbFunctionSetup( uchar data[8] )
 {
-	usbRequest_t *rq = (void *)data;
+usbRequest_t *rq = (void *)data;
 #if CAN_READ_FLASH
-	uchar i, crc = 0;
+uchar i, crc = 0;
 #endif
+
 #if CAN_COUNT_POLLS
 	idlePolls = 0;
 #endif
-
-    if( ( rq->bmRequestType & USBRQ_TYPE_MASK ) == USBRQ_TYPE_CLASS ) {    /* HID class request */
+	// HID class request
 #if CAN_READ_FLASH
-        if( rq->bRequest == USBRQ_HID_GET_REPORT ) {  /* wValue: ReportType (highbyte), ReportID (lowbyte) */
+	// wValue: ReportType (highbyte), ReportID (lowbyte)
+    if( rq->bRequest == USBRQ_HID_GET_REPORT ) {
 			
-			// Читаем репорт
-			exchangeReport[0] = 0;
+		// Читаем репорт
+		exchangeReport[0] = 0;
 			
-			uchar * ptr = exchangeReport + REPORT_DATA;
-			// Передаём сами данные
-			for( i = 0; i < SPM_PAGESIZE; i++ ) {
-				ptr[i] = pgm_read_byte( workAddress++ );
-			}
-			// И наконец проставляем crc
-			for( i = 0; i < REPORT_CRC; i++ ) {
-				crc = _crc_ibutton_update( crc, exchangeReport[i] );
-			}
-			exchangeReport[ REPORT_CRC ] = crc;
+		uchar * ptr = exchangeReport + REPORT_DATA;
+		// Передаём сами данные
+		for( i = 0; i < SPM_PAGESIZE; i++ ) {
+			ptr[i] = pgm_read_byte( currentAddress++ );
+		}
+		// И наконец проставляем crc
+		for( i = 0; i < REPORT_CRC; i++ ) {
+			crc = _crc_ibutton_update( crc, exchangeReport[i] );
+		}
+		exchangeReport[ REPORT_CRC ] = crc;
 
-			usbMsgPtr = exchangeReport;
+		usbMsgPtr = exchangeReport;
 			
-            return LOADER_REPORT_SIZE;
+        return LOADER_REPORT_SIZE;
 			
-        } else 
+    } else 
 #endif
-		if( rq->bRequest == USBRQ_HID_SET_REPORT ) {
-            /* since we have only one report type, we can ignore the report-ID */
-            bytesRemaining = LOADER_REPORT_SIZE;
-            currentAddress = 0;
-            return USB_NO_MSG;  /* use usbFunctionWrite() to receive data from host */
-        }
+	if( rq->bRequest == USBRQ_HID_SET_REPORT ) {
+        // since we have only one report type, we can ignore the report-ID
+		offset = 0;
+		// use usbFunctionWrite() to receive data from host
+        return USB_NO_MSG;
     }
     return 0;
 }
 
-static inline void tinyFlashInit() {
+static inline void tinyFlashInit() 
+{
 	// Вектора сброса и INT0 должны вести к бутлодеру. Иначе страница очищена
     if( pgm_read_word( RESET_ADDR ) != LOADER_VECTOR ||
         pgm_read_word( PCINT_ADDR ) != LOADER_VECTOR ) {
-
+			
 		writeInitialPage();
     }
 }
@@ -263,7 +244,6 @@ static inline void leaveBootloader() {
 
 static inline void initForUsbConnectivity() 
 {
-	uchar i = 0;
     usbInit();
 	// Переподключаемся
     usbDeviceDisconnect();
@@ -292,7 +272,6 @@ int main()
 			if( delay != 0 ) {
 				if( --delay == 0 ) {
 
-					
 					// На время таинства записи отключаемся от внешнего.
 					cli();
 					if( cmd & DO_ERASE_FLASH ) {
