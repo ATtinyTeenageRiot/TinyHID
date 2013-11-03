@@ -98,6 +98,7 @@ void writeWord( uint16_t word )
 	}
 		
 	boot_page_fill( currentAddress, word );
+	currentAddress += 2;
 }
 
 static inline void writePage()
@@ -108,10 +109,10 @@ static inline void writePage()
 static void writeInitialPage()
 {
 uchar i;
-
 	for( i = 0; i < SPM_PAGESIZE / 2; i++ ) {
 		writeWord( 0xffff );
 	}
+	boot_page_write( 0 );
 }
 
 static void eraseFlash()
