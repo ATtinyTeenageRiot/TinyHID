@@ -3,6 +3,8 @@ Microsoft Visual Studio Solution File, Format Version 11.00
 # Atmel Studio Solution File, Format Version 11.00
 Project("{54F91283-7BC4-4236-8FF9-10F437C3AD48}") = "usbloader", "usbloader\usbloader.cproj", "{3894B5F2-1D53-4BD5-9B82-A9E1E439A30D}"
 EndProject
+Project("{54F91283-7BC4-4236-8FF9-10F437C3AD48}") = "reloader", "reloader\reloader.cproj", "{8D651C31-C1AD-47A8-ABB8-B29B772B583B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|AVR = Debug|AVR
@@ -13,6 +15,10 @@ Global
 		{3894B5F2-1D53-4BD5-9B82-A9E1E439A30D}.Debug|AVR.Build.0 = Debug|AVR
 		{3894B5F2-1D53-4BD5-9B82-A9E1E439A30D}.Release|AVR.ActiveCfg = Release|AVR
 		{3894B5F2-1D53-4BD5-9B82-A9E1E439A30D}.Release|AVR.Build.0 = Release|AVR
+		{8D651C31-C1AD-47A8-ABB8-B29B772B583B}.Debug|AVR.ActiveCfg = Debug|AVR
+		{8D651C31-C1AD-47A8-ABB8-B29B772B583B}.Debug|AVR.Build.0 = Debug|AVR
+		{8D651C31-C1AD-47A8-ABB8-B29B772B583B}.Release|AVR.ActiveCfg = Release|AVR
+		{8D651C31-C1AD-47A8-ABB8-B29B772B583B}.Release|AVR.Build.0 = Release|AVR
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -9,3 +9,5 @@ firmware/usbloader/usbloader.atsuo
 firmware/TinyHIDLoader.atsuo
 software/TinyLoaderCmd/bin/*
 software/TinyLoaderCmd/obj/*
+firmware/reloader/Release/*
+firmware/reloader/Debug/*

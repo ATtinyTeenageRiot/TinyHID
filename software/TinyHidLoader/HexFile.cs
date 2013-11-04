@@ -58,6 +58,39 @@ namespace DeliSu
             Chunks = new List<HexChunk>();
         }
 
+        public long Offset
+        {
+            get
+            {
+                if (Chunks.Count == 0) return 0;
+                long result = long.MaxValue;
+                foreach (var chunk in Chunks)
+                {
+                    result = Math.Min(result, chunk.Offset);
+                }
+                return result;
+            }
+        }
+
+        public long End
+        {
+            get
+            {
+                if (Chunks.Count == 0) return 0;
+                long result = 0;
+                foreach (var chunk in Chunks)
+                {
+                    result = Math.Max(result, chunk.Data.Length);
+                }
+                return result;
+            }
+        }
+
+        public long Length
+        {
+            get { return End - Offset; }
+        }
+
         private void AppendData(long offset, byte[] data)
         {
             HexChunk nchunk = new HexChunk(offset, data);
@@ -83,9 +116,14 @@ namespace DeliSu
 
         public void Fill(byte[] buffer)
         {
+            Fill(buffer, 0);
+        }
+
+        public void Fill(byte[] buffer, long offset)
+        {
             foreach (HexFile.HexChunk c in Chunks)
             {
-                long pos = c.Offset;
+                long pos = c.Offset + offset;
                 for (int i = 0; i < c.Data.Length; i++)
                 {
                     buffer[pos++] = c.Data[i];
@@ -137,6 +175,10 @@ namespace DeliSu
                 else if (type == 0)
                 {
                     AppendData(currentOffset + address, data);
+                }
+                else if (type == 3)
+                {
+                    // Ignore this
                 }
                 else
                 {

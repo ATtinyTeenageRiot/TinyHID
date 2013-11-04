@@ -21,11 +21,11 @@ namespace DeliSu.TinyHidLoader
     {
         public const int PAGESIZE = 64;
         public const int LOADERSTART = 0x1800 - 4;
+        public const int FLASHSIZE = 0x2000;
         const int REPORT_SIZE = PAGESIZE + 3;
         const int REPORT_COMMAND = 1;
         const int REPORT_DATA = 3;
         const int REPORT_CRC = 2;
-
         HidDevice dev;
 
         public static HidDevice Find(int vid, int pid, string vendor, string device, int featureSize)
@@ -61,7 +61,7 @@ namespace DeliSu.TinyHidLoader
             }
         }
 
-        static byte Crc8(byte[] buffer, int offset, int count)
+        public static byte Crc8(byte[] buffer, int offset, int count)
         {
             byte crc = 0;
             count += offset;
@@ -78,6 +78,23 @@ namespace DeliSu.TinyHidLoader
             }
 
             return crc;
+        }
+
+        public static ushort Crc16(byte[] buffer, int offset, int count)
+        {
+            ushort crc = 0xffff;
+            for(int j = 0; j < count; j++)
+            {
+                crc ^= buffer[offset++];
+                for (int i = 0; i < 8; ++i)
+                {
+                    if ((crc & 1) != 0)
+                        crc = (ushort)((crc >> 1) ^ 0xA001);
+                    else
+                        crc = (ushort)(crc >> 1);
+                }
+            }
+	        return crc;
         }
 
         public Loader()
