@@ -1,0 +1,1 @@
+..\software\TinyLoaderCmd\bin\Release\TinyLoaderCmd.exe reload .\usbloader\Release\usbloader.hex
