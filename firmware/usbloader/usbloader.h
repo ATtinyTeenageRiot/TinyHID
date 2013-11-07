@@ -36,6 +36,12 @@
 #define START_JUMPER_PIN 0
 
 
+
+
+#ifndef BOOTLOADER_ADDRESS
+#define BOOTLOADER_ADDRESS ( BOOTLOADER_WADDRESS * 2 )
+#endif
+
 #ifndef __ASSEMBLER__
 
 	#include <avr/eeprom.h>
@@ -52,7 +58,7 @@
 		if( !digitalRead( START_JUMPER_PIN ) ) return 1;
 #endif
 		// Start bootloader if INT0 vector contains NOP command (which means than flash is empty)
-		if( pgm_read_byte( 3 ) == 0xff ) return 1;
+		if( pgm_read_byte( BOOTLOADER_ADDRESS - 3 ) == 0xff ) return 1;
 		// Start bootloader by following application code:
 		// WRITE DOWN THIS CODE IN YOUR APP
 		// cli();
@@ -68,7 +74,9 @@
 	static inline void  bootLoaderInit(void) 
 	{
 		// DeuxVis pin-0 pullup
+#ifdef START_JUMPER_PIN
 		PORTB |= _BV(START_JUMPER_PIN); // has pullup enabled
+#endif
 	}
 	
 	// Bootloader clear. Typically used for clearing pullap's

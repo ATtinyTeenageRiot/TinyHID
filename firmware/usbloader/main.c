@@ -63,10 +63,6 @@ static uchar cmd = 0;
 static uchar delay = 0;
 static uint16_t vectors[2];
 
-#ifndef BOOTLOADER_ADDRESS
-#define BOOTLOADER_ADDRESS ( BOOTLOADER_WADDRESS * 2 )
-#endif
-
 #if ( BOOTLOADER_ADDRESS % SPM_PAGESIZE ) != 0
 #error Bootloader address must be aligned by page size
 #endif
@@ -247,12 +243,13 @@ static inline void tinyFlashInit()
 
 // Переход к пользовательской программе
 static void leaveBootloader() __attribute__((__noreturn__));
-static inline void leaveBootloader() {
+static inline void leaveBootloader() 
+{
+    cli();
 
 	// Пользовательская фукнция очистки    
     bootLoaderExit();
 	
-    cli();
 	// Очищаем регистры
     USB_INTR_ENABLE = 0;
     USB_INTR_CFG = 0;
@@ -284,8 +281,8 @@ static inline void initForUsbConnectivity()
 int main()
 {
 	wdt_disable();
-	tinyFlashInit();
     bootLoaderInit();
+	tinyFlashInit();
 
 	if( bootLoaderStartCondition() ) {
 		initForUsbConnectivity();
