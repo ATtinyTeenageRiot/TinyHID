@@ -12,7 +12,13 @@
 #define __usbconfig_h_included__
 
 #include "usbloader.h"
+#if USE_TUNE == 1
 #include "osctune.h"
+#else
+#include "osccal.h"
+#endif
+
+
 
 
 /* ---------------------------- Hardware Config ---------------------------- */
@@ -69,7 +75,7 @@
 /* Define this to 1 if the device has its own power supply. Set it to 0 if the
  * device is powered from the USB bus.
  */
-#define USB_CFG_MAX_BUS_POWER           50
+#define USB_CFG_MAX_BUS_POWER           100
 /* Set this variable to the maximum USB bus power consumption of your device.
  * The value is in milliamperes. [It will be divided by two since USB
  * communicates power requirements in units of 2 mA.]
@@ -95,8 +101,11 @@
  * of the macros usbDisableAllRequests() and usbEnableAllRequests() in
  * usbdrv.h.
  */
-
+#if USE_TUNE == 1
 #define USB_CFG_HAVE_MEASURE_FRAME_LENGTH   0
+#else
+#define USB_CFG_HAVE_MEASURE_FRAME_LENGTH   1
+#endif
 /* define this macro to 1 if you want the function usbMeasureFrameLength()
  * compiled in. This function can be used to calibrate the AVR's RC oscillator.
  */

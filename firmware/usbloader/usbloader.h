@@ -30,12 +30,14 @@
 #define CAN_READ_FLASH 0
 // Set to 1 to bootloader could exit by the USB command, or 0 otherwise
 #define CAN_LEAVE_LOADER 1
+// Set to 2 to bootloader can check crc, 1 to check sum of data bytes, 0 to no check.
+#define CAN_CHECK_DATA 0
 // Set to PIN number, to blink LED while FLASH write, or comment otherwise
 // #define LED_PIN 4
 // Set to PIN number, to use jumper for Loader Start Condition, or comment otherwise
 #define START_JUMPER_PIN 0
-
-
+// Set to 1 to use osctune (smaller), or 0 to use osccal (faster)
+#define USE_TUNE 1
 
 
 #ifndef BOOTLOADER_ADDRESS

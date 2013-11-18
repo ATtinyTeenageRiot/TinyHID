@@ -74,6 +74,21 @@ static uchar exchangeReport[70];
 #if CAN_COUNT_POLLS
 uint16_t idlePolls = 0;
 #endif
+#if CAN_CHECK_DATA
+uint8_t crc;
+uint8_t sign;
+#define __boot_page_fill_clear()							\
+(__extension__({											\
+    __asm__ __volatile__									\
+    (														\
+        "sts %0, %1\n\t"									\
+        "spm\n\t"											\
+        :													\
+        : "i" (_SFR_MEM_ADDR(__SPM_REG)),					\
+          "r" ((uint8_t)(__BOOT_PAGE_FILL | (1 << CTPB)))	\
+    );														\
+}))
+#endif
 
 #if CAN_ERASE_EEPROM
 static inline void eraseEeprom()
@@ -154,6 +169,9 @@ static void eraseFlash()
 uchar usbFunctionWrite( uchar *data, uchar len )
 {
 uchar * end;
+#if CAN_CHECK_DATA
+uchar i;
+#endif			
 
 	// offset - позиция в report-е.
 	offset += len;
@@ -164,6 +182,11 @@ uchar * end;
 		if( cmd ) return 0xff;
 		cmd = data[ REPORT_COMMAND ];
 		
+#if CAN_CHECK_DATA
+		crc = 0;
+		sign = data[ REPORT_CRC ];
+#endif
+
 		if( cmd != DO_WRITE_FLASH ) {
 			currentAddress = 0;
 		}
@@ -171,6 +194,17 @@ uchar * end;
 		data += REPORT_DATA;
 		len -= REPORT_DATA;
 	}
+	
+#if CAN_CHECK_DATA == 2
+	for( i = 0; i < len; i++ ) {
+		crc = _crc_ibutton_update( crc, data[ i ] );
+	}
+#endif
+#if CAN_CHECK_DATA == 1
+	for( i = 0; i < len; i++ ) {
+		crc += data[ i ];
+	}
+#endif
 	
 	if( cmd & DO_WRITE_FLASH ) {
 		end = data + len;
@@ -180,6 +214,12 @@ uchar * end;
 		}
 	}
 	if( offset == LOADER_REPORT_SIZE ) {
+#if CAN_CHECK_DATA
+		if( crc != sign ) {
+			__boot_page_fill_clear();
+			return 0xff;
+		}
+#endif		
 		delay = 10;
 		return 1;
 	}

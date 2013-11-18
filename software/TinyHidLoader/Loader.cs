@@ -146,7 +146,7 @@ namespace DeliSu.TinyHidLoader
             {
                 byte[] buffer = new byte[REPORT_SIZE];
                 buffer[REPORT_COMMAND] = (byte)LoaderCommand.LeaveBootloader;
-                buffer[REPORT_CRC] = Crc8(buffer, 1, 65);
+                buffer[REPORT_CRC] = Crc8(buffer, REPORT_DATA, PAGESIZE);
                 stream.SetFeature(buffer);
             }
         }
