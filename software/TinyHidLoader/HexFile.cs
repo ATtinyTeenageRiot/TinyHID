@@ -223,5 +223,25 @@ namespace DeliSu
                 writer.WriteLine(":00000001FF");
             }
         }
+
+        public static bool operator ==(HexFile x, HexFile y)
+        {
+            if (x.Chunks.Count != y.Chunks.Count) return false;
+            for (int i = 0; i < x.Chunks.Count; i++)
+            {
+                if (x.Chunks[i].Offset != y.Chunks[i].Offset) return false;
+                if (x.Chunks[i].Data.Length != y.Chunks[i].Data.Length) return false;
+                for (int j = 0; j < x.Chunks[i].Data.Length; j++)
+                {
+                    if (x.Chunks[i].Data[j] != y.Chunks[i].Data[j]) return false;
+                }
+            }
+            return true;
+        }
+
+        public static bool operator !=(HexFile x, HexFile y)
+        {
+            return !(x == y);
+        }
     }
 }
