@@ -81,11 +81,13 @@
 #endif
 	}
 	
-	// Bootloader clear. Typically used for clearing pullap's
-	static inline void  bootLoaderExit(void) 
+	static inline void  bootLoaderInitiated(void) 
 	{
 		PORTB = 0;
 	}
+	
+	// Bootloader clear. Typically used for clearing pullap's
+	#define bootLoaderExit() 
 	
 	// Additional acion on program leaving bootloader
 	#define leaveLoader()
@@ -95,8 +97,10 @@
 // Protocol constants
 #define LOADER_REPORT_SIZE ( SPM_PAGESIZE + 2 )
 #define REPORT_COMMAND 0
+#define REPORT_LENGTH 3
 #define REPORT_DATA 2
 #define REPORT_CRC 1
+
 
 #define LOADER_VECTOR ( 0xC000 + ( BOOTLOADER_ADDRESS / 2 ) - 1 )
 #define APP_RESET_SHIFT ( ( FLASHEND + 1 - BOOTLOADER_ADDRESS ) / 2 + 2 )

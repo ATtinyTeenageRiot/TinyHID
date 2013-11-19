@@ -326,6 +326,7 @@ int main()
 
 	if( bootLoaderStartCondition() ) {
 		initForUsbConnectivity();
+		bootLoaderInitiated();
 #ifdef LED_PIN
 		DDRB |= _BV(LED_PIN);
 #endif		
