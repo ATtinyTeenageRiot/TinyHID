@@ -132,7 +132,9 @@ uint16_t addr = currentAddress;
 		word = LOADER_VECTOR;
 	}
 		
+	cli();
 	boot_page_fill( currentAddress, word );
+	sei();
 	currentAddress += 2;
 }
 
@@ -179,8 +181,6 @@ static void eraseFlash()
  */
 uchar usbFunctionWrite( uchar *data, uchar len )
 {
-uchar * end;
-
 	// offset - позиция в report-е.
 	offset += len;
 	// Если это первая порция
@@ -212,16 +212,18 @@ uchar * end;
 #endif
 	
 	if( cmd & DO_WRITE_FLASH ) {
-		end = data + len;
-		while( data < end ) {
+		while( len ) {
 			writeWord( *(int16_t*)data );
 			data += 2;
+			len -= 2;
 		}
 	}
 	if( offset == LOADER_REPORT_SIZE ) {
 #if CAN_CHECK_DATA
 		if( crc != sign ) {
+			cli();
 			__boot_page_fill_clear();
+			sei();
 			return 0xff;
 		}
 #endif		
@@ -326,8 +328,8 @@ int main()
 	tinyFlashInit();
 
 	if( bootLoaderStartCondition() ) {
-		initForUsbConnectivity();
 		bootLoaderInitiated();
+		initForUsbConnectivity();
 #ifdef LED_PIN
 		DDRB |= _BV(LED_PIN);
 #endif		
