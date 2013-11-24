@@ -71,9 +71,6 @@ static uint16_t vectors[2];
 #if CAN_READ_FLASH
 static uchar exchangeReport[70];
 #endif
-#if CAN_COUNT_POLLS
-uint16_t idlePolls = 0;
-#endif
 #if CAN_CHECK_DATA
 static crc_t crc;
 static crc_t sign;
@@ -337,9 +334,6 @@ int main()
 		do
 		{
 			usbPoll();
-#		if CAN_COUNT_POLLS
-			idlePolls++;
-#		endif
 			_delay_us( 100 );
 			
 			if( delay != 0 ) {
