@@ -111,8 +111,8 @@ namespace DeliSu.TinyLoaderCmd
                 catch (Exception e)
                 {
                     Console.WriteLine(e.Message);
-                    return;
                 }
+                return;
             }
             else if (args.Length == 2 && args[0] == "read")
             {

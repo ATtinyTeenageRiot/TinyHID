@@ -12,10 +12,10 @@
 #define __usbconfig_h_included__
 
 #include "usbloader.h"
-#if USE_TUNE == 1
-#include "osctune.h"
-#else
+#if CAN_SUPPORT_HUB
 #include "osccal.h"
+#else
+#include "osctune.h"
 #endif
 
 
@@ -101,10 +101,10 @@
  * of the macros usbDisableAllRequests() and usbEnableAllRequests() in
  * usbdrv.h.
  */
-#if USE_TUNE == 1
-#define USB_CFG_HAVE_MEASURE_FRAME_LENGTH   0
-#else
+#if CAN_SUPPORT_HUB
 #define USB_CFG_HAVE_MEASURE_FRAME_LENGTH   1
+#else
+#define USB_CFG_HAVE_MEASURE_FRAME_LENGTH   0
 #endif
 /* define this macro to 1 if you want the function usbMeasureFrameLength()
  * compiled in. This function can be used to calibrate the AVR's RC oscillator.

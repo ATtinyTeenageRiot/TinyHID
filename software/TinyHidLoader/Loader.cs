@@ -10,8 +10,11 @@ namespace DeliSu.TinyHidLoader
     [Flags]
     enum LoaderCommand : byte
     {
-        ReadFlash = 0,
-        WriteFlash = 0x10,
+        ResetAddress = 0x01,
+        SetAddress = 0x02,
+        WriteFlash = 0x04,
+        FillFlash = 0x08,
+        FillPart = 0x010,
         EraseFlash = 0x20,
         EraseEeprom = 0x40,
         LeaveBootloader = 0x80,
@@ -122,7 +125,7 @@ namespace DeliSu.TinyHidLoader
         {
             using (HidStream stream = dev.Open())
             {
-                byte[] buffer = new byte[67];
+                byte[] buffer = new byte[REPORT_SIZE];
                 buffer[REPORT_COMMAND] = (byte)LoaderCommand.EraseEeprom;
                 SignBuffer(buffer);
                 stream.SetFeature(buffer);
@@ -137,7 +140,7 @@ namespace DeliSu.TinyHidLoader
             using (HidStream stream = dev.Open())
             {
                 byte[] buffer = new byte[REPORT_SIZE];
-                buffer[REPORT_COMMAND] = (byte)LoaderCommand.EraseFlash;
+                buffer[REPORT_COMMAND] = (byte)(LoaderCommand.EraseFlash | LoaderCommand.ResetAddress);
                 SignBuffer(buffer);
                 stream.SetFeature(buffer);
             }
@@ -177,14 +180,16 @@ namespace DeliSu.TinyHidLoader
             using (HidStream stream = dev.Open())
             {
                 byte[] buffer = new byte[REPORT_SIZE];
-                buffer[REPORT_COMMAND] = (byte)LoaderCommand.ReadFlash;
+                buffer[REPORT_COMMAND] = (byte)(LoaderCommand.ResetAddress);
                 SignBuffer(buffer);
                 stream.SetFeature(buffer);
                 int readed = 0;
                 while(true)
                 {
                     stream.GetFeature(buffer);
-                    if (buffer[REPORT_CRC] != Crc16(buffer, REPORT_DATA, PAGESIZE))
+                    ushort crc = (ushort)(buffer[REPORT_CRC] | ((ushort)buffer[REPORT_CRC + 1] << 8));
+
+                    if (crc != Crc16(buffer, REPORT_DATA, PAGESIZE))
                         throw new IOException("transfer fails, try again");
 
                     for (int i = REPORT_DATA; i < PAGESIZE + REPORT_DATA; i++)
@@ -212,14 +217,16 @@ namespace DeliSu.TinyHidLoader
             using (HidStream dstream = dev.Open())
             {
                 byte[] buffer = new byte[REPORT_SIZE];
-                buffer[REPORT_COMMAND] = (byte)LoaderCommand.ReadFlash;
+                buffer[REPORT_COMMAND] = (byte)(LoaderCommand.ResetAddress);
                 SignBuffer(buffer);
                 dstream.SetFeature(buffer);
                 int readed = 0;
                 while (true)
                 {
                     dstream.GetFeature(buffer);
-                    if (buffer[REPORT_CRC] != Crc16(buffer, REPORT_DATA, PAGESIZE))
+                    ushort crc = (ushort)(buffer[REPORT_CRC] | ((ushort)buffer[REPORT_CRC + 1] << 8));
+
+                    if (crc != Crc16(buffer, REPORT_DATA, PAGESIZE))
                         throw new IOException("transfer fails, try again");
 
                     int rest = PAGESIZE;
@@ -245,13 +252,13 @@ namespace DeliSu.TinyHidLoader
         {
             using (HidStream stream = dev.Open())
             {
-                byte[] buffer = new byte[REPORT_SIZE + 1];
+                byte[] buffer = new byte[REPORT_SIZE];
 
                 int writed = 0;
                 while (true)
                 {
-                    buffer[1] = (byte)LoaderCommand.WriteFlash;
-                    if (writed == 0) buffer[1] |= (byte)LoaderCommand.EraseFlash;
+                    buffer[REPORT_COMMAND] = (byte)(LoaderCommand.WriteFlash | LoaderCommand.FillFlash);
+                    if (writed == 0) buffer[REPORT_COMMAND] |= (byte)(LoaderCommand.EraseFlash | LoaderCommand.ResetAddress);
 
                     for (int i = REPORT_DATA; i < REPORT_DATA + PAGESIZE; i++)
                     {
@@ -272,16 +279,23 @@ namespace DeliSu.TinyHidLoader
                             SignBuffer(buffer);
                             // Не факт, что устройство уже аклималось, или что USB контроллер его подхватил снова
                             // Так что возможны и вылеты. И раз они есть - то надо пробовать снова и снова.
-                            stream.SetFeature(buffer);
+                            if (i < 10)
+                            {
+                                stream.SetFeature(buffer);
+                            }
+                            else
+                            {
+                                WriteByParts(stream, programm, offset - PAGESIZE);
+                            }
                             break;
                         }
                         catch
                         {
-                            if (i > 10) throw new Exception("can`t write at " + (writed - PAGESIZE));
+                            if (i > 20) throw new Exception("can`t write at " + (writed - PAGESIZE));
                             Thread.Sleep(400);
                         }
                     }
-                    if (buffer[REPORT_COMMAND] == (byte)LoaderCommand.WriteFlash)
+                    if (buffer[REPORT_COMMAND] == (byte)(LoaderCommand.WriteFlash | LoaderCommand.FillFlash))
                     {
                         Thread.Sleep(5);
                     }
@@ -292,6 +306,33 @@ namespace DeliSu.TinyHidLoader
                     if (writed >= LOADERSTART) return writed;
                 }
             }
+        }
+
+        private void WriteByParts(HidStream stream, byte[] programm, int offset)
+        {
+            byte[] buffer = new byte[REPORT_SIZE];
+            buffer[REPORT_COMMAND] = (byte)(LoaderCommand.SetAddress | LoaderCommand.FillPart);
+            buffer[REPORT_DATA] = (byte)offset;
+            buffer[REPORT_DATA + 1] = (byte)(offset >> 8);
+            SignBuffer(buffer);
+            stream.SetFeature(buffer);
+            Thread.Sleep(1);
+
+            for (int i = 0; i < PAGESIZE / 4; i++)
+            {
+                buffer[REPORT_COMMAND] = (byte)(LoaderCommand.FillFlash | LoaderCommand.FillPart);
+                for (int j = 0; j < 4; j++)
+                {
+                    buffer[j + REPORT_DATA] = programm[offset++];
+                }
+                SignBuffer(buffer);
+                stream.SetFeature(buffer);
+                Thread.Sleep(1);
+            }
+            buffer[REPORT_COMMAND] = (byte)LoaderCommand.WriteFlash;
+            SignBuffer(buffer);
+            stream.SetFeature(buffer);
+            Thread.Sleep(5);
         }
     }
 }

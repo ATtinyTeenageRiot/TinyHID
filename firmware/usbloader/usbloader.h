@@ -36,8 +36,8 @@
 // #define LED_PIN 4
 // Set to PIN number, to use jumper for Loader Start Condition, or comment otherwise
 #define START_JUMPER_PIN 0
-// Set to 1 to use osctune (smaller), or 0 to use osccal (faster)
-#define USE_TUNE 1
+// Set to 1 for using osccal, and adding some capabilities for USB hub support.
+#define CAN_SUPPORT_HUB 1
 
 
 #ifndef BOOTLOADER_ADDRESS

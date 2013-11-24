@@ -49,8 +49,11 @@ PROGMEM const char usbHidReportDescriptor[22] = {    /* USB report descriptor */
  * opaque data bytes.
  */
 
-#define DO_READ_FLASH 0
-#define DO_WRITE_FLASH 0x10	
+#define DO_RESET_ADDRESS 0x01
+#define DO_SET_ADDRESS 0x02
+#define DO_WRITE_FLASH 0x04
+#define DO_FILL_FLASH 0x08
+#define DO_FILL_PART 0x10
 #define DO_ERASE_FLASH 0x20
 #define DO_ERASE_EEPROM 0x40
 #define DO_LEAVE_BOOTLOADER 0x80
@@ -84,7 +87,9 @@ static crc_t crc_update( crc_t crc, uint8_t *data, uint8_t len )
 	}
 	return crc;
 }
+#endif
 
+#if CAN_CHECK_DATA || CAN_SUPPORT_HUB
 #define __boot_page_fill_clear()							\
 (__extension__({											\
     __asm__ __volatile__									\
@@ -194,19 +199,32 @@ uchar usbFunctionWrite( uchar *data, uchar len )
 		}
 #endif
 
-		if( cmd != DO_WRITE_FLASH ) {
+		if( cmd & DO_RESET_ADDRESS ) {
 			currentAddress = 0;
 		}
 
 		data += REPORT_DATA;
 		len -= REPORT_DATA;
+
+#if CAN_CHECK_DATA || CAN_SUPPORT_HUB
+		if( cmd & DO_SET_ADDRESS ) {
+			currentAddress = *((uint16_t*)data);
+			cli();
+			__boot_page_fill_clear();
+			sei();
+		}
+#endif		
 	}
 	
 #if CAN_CHECK_DATA
 	crc = crc_update( crc, data, len );
 #endif
 	
-	if( cmd & DO_WRITE_FLASH ) {
+	if( cmd & DO_FILL_FLASH 
+#if CAN_SUPPORT_HUB
+		&& ( ( cmd & DO_FILL_PART ) == 0 || offset <= 8 )
+#endif
+	) {
 		while( len ) {
 			cli();
 			writeWord( *(int16_t*)data );
@@ -218,9 +236,7 @@ uchar usbFunctionWrite( uchar *data, uchar len )
 	if( offset == LOADER_REPORT_SIZE ) {
 #if CAN_CHECK_DATA
 		if( crc != sign ) {
-			cli();
-			__boot_page_fill_clear();
-			sei();
+			cmd = 0;
 			return 0xff;
 		}
 #endif		
