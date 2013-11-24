@@ -31,7 +31,7 @@
 // Set to 1 to bootloader could exit by the USB command, or 0 otherwise
 #define CAN_LEAVE_LOADER 1
 // Set to 2 to bootloader can check crc, 1 to check sum of data bytes, 0 to no check.
-#define CAN_CHECK_DATA 0
+#define CAN_CHECK_DATA 1
 // Set to PIN number, to blink LED while FLASH write, or comment otherwise
 // #define LED_PIN 4
 // Set to PIN number, to use jumper for Loader Start Condition, or comment otherwise
@@ -95,11 +95,23 @@
 #endif
 
 // Protocol constants
-#define LOADER_REPORT_SIZE ( SPM_PAGESIZE + 2 )
+// HID report length
+#define LOADER_REPORT_SIZE ( SPM_PAGESIZE + 4 )
+// Command offset in report
 #define REPORT_COMMAND 0
-#define REPORT_LENGTH 3
-#define REPORT_DATA 2
+// Data offset in report
+#define REPORT_DATA 4
+// CRC offset in report
 #define REPORT_CRC 1
+// Command check offset in report
+#define REPORT_CMD_CHECK 3
+// CRC algorithm
+#define CRC_FUNCTION _crc16_update
+// CRC data type (uint16_t or uint8_t)
+#define crc_t uint16_t
+// CRC initial value
+#define CRC_INITIAL 0xffff
+
 
 
 #define LOADER_VECTOR ( 0xC000 + ( BOOTLOADER_ADDRESS / 2 ) - 1 )

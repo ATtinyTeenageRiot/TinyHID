@@ -75,8 +75,19 @@ static uchar exchangeReport[70];
 uint16_t idlePolls = 0;
 #endif
 #if CAN_CHECK_DATA
-uint8_t crc;
-uint8_t sign;
+static crc_t crc;
+static crc_t sign;
+
+static crc_t crc_update( crc_t crc, uint8_t *data, uint8_t len )
+{
+	while( len ) {
+		crc = CRC_FUNCTION( crc, *data );
+		data++;
+		len--;
+	}
+	return crc;
+}
+
 #define __boot_page_fill_clear()							\
 (__extension__({											\
     __asm__ __volatile__									\
@@ -169,9 +180,6 @@ static void eraseFlash()
 uchar usbFunctionWrite( uchar *data, uchar len )
 {
 uchar * end;
-#if CAN_CHECK_DATA
-uchar i;
-#endif			
 
 	// offset - позиция в report-е.
 	offset += len;
@@ -183,8 +191,12 @@ uchar i;
 		cmd = data[ REPORT_COMMAND ];
 		
 #if CAN_CHECK_DATA
-		crc = 0;
-		sign = data[ REPORT_CRC ];
+		crc = CRC_INITIAL;
+		sign = *(crc_t*)(data + REPORT_CRC);
+		if( data[ REPORT_CMD_CHECK ] + cmd != 0xff ) {
+			cmd = 0;
+			return 0xff;
+		}
 #endif
 
 		if( cmd != DO_WRITE_FLASH ) {
@@ -195,15 +207,8 @@ uchar i;
 		len -= REPORT_DATA;
 	}
 	
-#if CAN_CHECK_DATA == 2
-	for( i = 0; i < len; i++ ) {
-		crc = _crc_ibutton_update( crc, data[ i ] );
-	}
-#endif
-#if CAN_CHECK_DATA == 1
-	for( i = 0; i < len; i++ ) {
-		crc += data[ i ];
-	}
+#if CAN_CHECK_DATA
+	crc = crc_update( crc, data, len );
 #endif
 	
 	if( cmd & DO_WRITE_FLASH ) {
@@ -232,14 +237,11 @@ usbMsgLen_t usbFunctionSetup( uchar data[8] )
 {
 usbRequest_t *rq = (void *)data;
 #if CAN_READ_FLASH
-uchar i, crc = 0;
+uchar i;
+#if CAN_CHECK_DATA
+crc_t crc = CRC_INITIAL;
 #endif
 
-#if CAN_COUNT_POLLS
-	idlePolls = 0;
-#endif
-	// HID class request
-#if CAN_READ_FLASH
 	// wValue: ReportType (highbyte), ReportID (lowbyte)
     if( rq->bRequest == USBRQ_HID_GET_REPORT ) {
 			
@@ -251,12 +253,11 @@ uchar i, crc = 0;
 		for( i = 0; i < SPM_PAGESIZE; i++ ) {
 			ptr[i] = pgm_read_byte( currentAddress++ );
 		}
-		// И наконец проставляем crc
-		for( i = 0; i < REPORT_CRC; i++ ) {
-			crc = _crc_ibutton_update( crc, exchangeReport[i] );
-		}
-		exchangeReport[ REPORT_CRC ] = crc;
-
+#if CAN_CHECK_DATA
+		// And calculate crc
+		crc = crc_update( crc, exchangeReport + REPORT_DATA, SPM_PAGESIZE );
+		*(crc_t*)(exchangeReport + REPORT_CRC) = crc;
+#endif
 		usbMsgPtr = exchangeReport;
 			
         return LOADER_REPORT_SIZE;

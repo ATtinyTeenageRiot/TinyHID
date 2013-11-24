@@ -22,10 +22,11 @@ namespace DeliSu.TinyHidLoader
         public const int PAGESIZE = 64;
         public const int LOADERSTART = 0x1800 - 4;
         public const int FLASHSIZE = 0x2000;
-        const int REPORT_SIZE = PAGESIZE + 3;
+        const int REPORT_SIZE = PAGESIZE + 5;
         const int REPORT_COMMAND = 1;
-        const int REPORT_DATA = 3;
         const int REPORT_CRC = 2;
+        const int REPORT_CMD_CHECK = 4;
+        const int REPORT_DATA = 5;
         HidDevice dev;
 
         public static HidDevice Find(int vid, int pid, string vendor, string device, int featureSize)
@@ -97,9 +98,17 @@ namespace DeliSu.TinyHidLoader
 	        return crc;
         }
 
+        private static void SignBuffer(byte[] buffer)
+        {
+            buffer[REPORT_CMD_CHECK] = (byte)~buffer[REPORT_COMMAND];
+            ushort crc = Crc16(buffer, REPORT_DATA, PAGESIZE);
+            buffer[REPORT_CRC] = (byte)crc;
+            buffer[REPORT_CRC + 1] = (byte)(crc >> 8);
+        }
+
         public Loader()
         {
-            dev = Find(0x16c0, 0x05df, "deli.su", "TinyHID Loader", 67);
+            dev = Find(0x16c0, 0x05df, "deli.su", "TinyHID Loader", REPORT_SIZE);
             if (dev == null) throw new Exception("Device not found");
         }
 
@@ -115,7 +124,7 @@ namespace DeliSu.TinyHidLoader
             {
                 byte[] buffer = new byte[67];
                 buffer[REPORT_COMMAND] = (byte)LoaderCommand.EraseEeprom;
-                buffer[REPORT_CRC] = Crc8(buffer, REPORT_DATA, PAGESIZE);
+                SignBuffer(buffer);
                 stream.SetFeature(buffer);
             }
         }
@@ -129,7 +138,7 @@ namespace DeliSu.TinyHidLoader
             {
                 byte[] buffer = new byte[REPORT_SIZE];
                 buffer[REPORT_COMMAND] = (byte)LoaderCommand.EraseFlash;
-                buffer[REPORT_CRC] = Crc8(buffer, REPORT_DATA, PAGESIZE);
+                SignBuffer(buffer);
                 stream.SetFeature(buffer);
             }
         }
@@ -146,7 +155,7 @@ namespace DeliSu.TinyHidLoader
             {
                 byte[] buffer = new byte[REPORT_SIZE];
                 buffer[REPORT_COMMAND] = (byte)LoaderCommand.LeaveBootloader;
-                buffer[REPORT_CRC] = Crc8(buffer, REPORT_DATA, PAGESIZE);
+                SignBuffer(buffer);
                 stream.SetFeature(buffer);
             }
         }
@@ -169,13 +178,13 @@ namespace DeliSu.TinyHidLoader
             {
                 byte[] buffer = new byte[REPORT_SIZE];
                 buffer[REPORT_COMMAND] = (byte)LoaderCommand.ReadFlash;
-                buffer[REPORT_CRC] = Crc8(buffer, REPORT_COMMAND, REPORT_CRC - REPORT_COMMAND);
+                SignBuffer(buffer);
                 stream.SetFeature(buffer);
                 int readed = 0;
                 while(true)
                 {
                     stream.GetFeature(buffer);
-                    if (buffer[REPORT_CRC] != Crc8(buffer, 1, REPORT_CRC - REPORT_COMMAND))
+                    if (buffer[REPORT_CRC] != Crc16(buffer, REPORT_DATA, PAGESIZE))
                         throw new IOException("transfer fails, try again");
 
                     for (int i = REPORT_DATA; i < PAGESIZE + REPORT_DATA; i++)
@@ -204,13 +213,13 @@ namespace DeliSu.TinyHidLoader
             {
                 byte[] buffer = new byte[REPORT_SIZE];
                 buffer[REPORT_COMMAND] = (byte)LoaderCommand.ReadFlash;
-                buffer[REPORT_CRC] = Crc8(buffer, 1, REPORT_CRC - REPORT_COMMAND);
+                SignBuffer(buffer);
                 dstream.SetFeature(buffer);
                 int readed = 0;
                 while (true)
                 {
                     dstream.GetFeature(buffer);
-                    if (buffer[REPORT_CRC] != Crc8(buffer, 1, REPORT_CRC - REPORT_COMMAND))
+                    if (buffer[REPORT_CRC] != Crc16(buffer, REPORT_DATA, PAGESIZE))
                         throw new IOException("transfer fails, try again");
 
                     int rest = PAGESIZE;
@@ -256,11 +265,11 @@ namespace DeliSu.TinyHidLoader
                             buffer[i] = programm[offset++];
                         }
                     }
-                    buffer[REPORT_CRC] = Crc8(buffer, REPORT_DATA, PAGESIZE);
                     for (int i = 0; ; i++)
                     {
                         try
                         {
+                            SignBuffer(buffer);
                             // Не факт, что устройство уже аклималось, или что USB контроллер его подхватил снова
                             // Так что возможны и вылеты. И раз они есть - то надо пробовать снова и снова.
                             stream.SetFeature(buffer);
@@ -278,7 +287,7 @@ namespace DeliSu.TinyHidLoader
                     }
                     else
                     {
-                        Thread.Sleep(300);
+                        Thread.Sleep(500);
                     }
                     if (writed >= LOADERSTART) return writed;
                 }
