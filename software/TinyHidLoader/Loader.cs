@@ -279,7 +279,7 @@ namespace DeliSu.TinyHidLoader
                             SignBuffer(buffer);
                             // Не факт, что устройство уже аклималось, или что USB контроллер его подхватил снова
                             // Так что возможны и вылеты. И раз они есть - то надо пробовать снова и снова.
-                            if (i < 10)
+                            if (i < 3)
                             {
                                 stream.SetFeature(buffer);
                             }
@@ -292,7 +292,7 @@ namespace DeliSu.TinyHidLoader
                         catch
                         {
                             if (i > 20) throw new Exception("can`t write at " + (writed - PAGESIZE));
-                            Thread.Sleep(400);
+                            Thread.Sleep(20);
                         }
                     }
                     if (buffer[REPORT_COMMAND] == (byte)(LoaderCommand.WriteFlash | LoaderCommand.FillFlash))
