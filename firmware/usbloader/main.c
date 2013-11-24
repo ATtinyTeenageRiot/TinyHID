@@ -132,9 +132,7 @@ uint16_t addr = currentAddress;
 		word = LOADER_VECTOR;
 	}
 		
-	cli();
 	boot_page_fill( currentAddress, word );
-	sei();
 	currentAddress += 2;
 }
 
@@ -213,7 +211,9 @@ uchar usbFunctionWrite( uchar *data, uchar len )
 	
 	if( cmd & DO_WRITE_FLASH ) {
 		while( len ) {
+			cli();
 			writeWord( *(int16_t*)data );
+			sei();
 			data += 2;
 			len -= 2;
 		}
