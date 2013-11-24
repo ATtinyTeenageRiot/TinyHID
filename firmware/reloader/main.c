@@ -16,12 +16,16 @@
 static void switchBack(uint8_t code)
 {
 #ifdef LED_PIN
-	for( uint8_t i = 0; i < 8; i++ ) {
+	PORTB |= _BV( LED_PIN );
+	_delay_ms( 500 );
+	PORTB &= ~_BV( LED_PIN );
+	_delay_ms( 500 );
+	for( uint8_t i = 0; i < 4; i++ ) {
 		PORTB |= _BV( LED_PIN );
-		if( code & 0x1 ) _delay_ms( 500 );
-		else _delay_ms( 100 );
+		if( code & 0x1 ) _delay_ms( 1000 );
+		else _delay_ms( 200 );
 		PORTB &= ~_BV( LED_PIN );
-		_delay_ms( 100 );
+		_delay_ms( 200 );
 		code >>= 1;
 	}
 #endif
@@ -78,11 +82,11 @@ int main(void)
 			crc = _crc16_update( crc, pgm_read_byte( addr ) );
 		}
 		// CRC16 must be correct
-		if( crc != pgm_read_word( INFO_CRC ) ) switchBack( 0x21 );
+		if( crc != pgm_read_word( INFO_CRC ) ) switchBack( 0x2 );
 	
 		uint16_t op = pgm_read_word( BOOTLOADER_DATA );
 		// First instruction must be rjmp to valid address
-		if( op < 0xc000 && op >= 0xc000 + ( size / 2 ) ) switchBack( 0x30 );
+		if( op < 0xc000 && op >= 0xc000 + ( size / 2 ) ) switchBack( 0x3 );
 	
 
 ///////////////////////////////////////////////////////////////////////////////
