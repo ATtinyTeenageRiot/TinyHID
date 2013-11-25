@@ -256,7 +256,11 @@
 /* #define USB_INTR_PENDING_BIT    INTF0 */
 
 #define USB_INTR_CFG            PCMSK
+#if CAN_SUPPORT_HUB
+#define USB_INTR_CFG_SET        (1 << USB_CFG_DPLUS_BIT)
+#else
 #define USB_INTR_CFG_SET        (1 << USB_CFG_DMINUS_BIT)
+#endif
 #define USB_INTR_CFG_CLR        0
 #define USB_INTR_ENABLE         GIMSK
 #define USB_INTR_ENABLE_BIT     PCIE

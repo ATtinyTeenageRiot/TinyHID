@@ -37,7 +37,7 @@
 // Set to PIN number, to use jumper for Loader Start Condition, or comment otherwise
 #define START_JUMPER_PIN 0
 // Set to 1 for using osccal, and adding some capabilities for USB hub support.
-#define CAN_SUPPORT_HUB 1
+#define CAN_SUPPORT_HUB 0
 
 
 #ifndef BOOTLOADER_ADDRESS
